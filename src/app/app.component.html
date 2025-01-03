@@ -1,18 +1,35 @@
-<div style="display: block;">
+<div class="options-container">
+  Row
+  <select name="fieldNames" id="fieldNames" [(ngModel)]="selectedOptionRow">
+    <ng-container  *ngFor="let field of fieldNames">
+      <option [value]="field">{{field}}</option>
+    </ng-container>
+  </select>
+  Column
+  <select name="fieldNames" id="fieldNames" [(ngModel)]="selectedOptionColumn">
+    <ng-container  *ngFor="let field of fieldNames">
+      <option [value]="field">{{field}}</option>
+    </ng-container>
+  </select>
+  <select name="chartType" id="" [(ngModel)]="chartType">
+    <option value="line">Line Graph</option>
+    <option value="bar">Bar Chart</option>
+    <option value="doughnut">Pie Chart</option>
+    <option value="radar">Radar Chart</option>
+  </select>
+  <div>
+    <input type="file" (change)="onFileChange($event)" />
+  </div>
+  
+</div>
+<button (click)="showGraph()">Show Graph</button>
+
+<div *ngIf="graph" class="graph-container" style="display: block;">
   <canvas baseChart
           [datasets]="lineChartData"
           [labels]="lineChartLabels"
           [options]="lineChartOptions"
-          [legend]="lineChartLegend">
-  </canvas>
-</div>
-<div style="display: block;">
-  <canvas baseChart
-          [datasets]="radarChartData"
-          [labels]="radarChartLabels"
-          [options]="radarChartOptions"
-          [legend]="radarChartLegend"
-          >
-          
+          [legend]="lineChartLegend"
+          [type]="chartType">
   </canvas>
 </div>
