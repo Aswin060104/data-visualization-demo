@@ -1,12 +1,12 @@
 <div class="options-container">
   Row
-  <select name="fieldNames" id="fieldNames" [(ngModel)]="selectedOptionRow">
+  <select name="fieldNames" id="fieldNames" [(ngModel)]="selectedOptionRow" (change)="fetchValues()">
     <ng-container  *ngFor="let field of fieldNames">
       <option [value]="field">{{field}}</option>
     </ng-container>
   </select>
   Column
-  <select name="fieldNames" id="fieldNames" [(ngModel)]="selectedOptionColumn">
+  <select name="fieldNames" id="fieldNames" [(ngModel)]="selectedOptionColumn" (change)="fetchValues()">
     <ng-container  *ngFor="let field of fieldNames">
       <option [value]="field">{{field}}</option>
     </ng-container>
@@ -17,6 +17,9 @@
     <option value="doughnut">Pie Chart</option>
     <option value="radar">Radar Chart</option>
   </select>
+  <input type="number" placeholder="Enter number of items" [(ngModel)]="itemCount">
+  <button (click)="limitDisplayItems()">Filter</button>
+  <button (click)="ascendingSort()">Sort</button>
   <div>
     <input type="file" (change)="onFileChange($event)" />
   </div>
@@ -33,3 +36,21 @@
           [type]="chartType">
   </canvas>
 </div>
+
+<!-- <div class="graph-container" style="display: block;">
+  <canvas baseChart
+          [datasets]="[
+            {
+      data: ['10','140','20'], 
+      label: 'option'
+    },
+    ]"
+       y-axis aboveData
+       x-axis belowData
+          [labels]="['1','2','3','4','10','23']" 
+          [options]="lineChartOptions"
+          [legend]="lineChartLegend"
+          [type]="chartType"
+        >
+  </canvas>
+</div> -->

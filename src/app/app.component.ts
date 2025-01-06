@@ -1,6 +1,7 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, inject } from '@angular/core';
 import { ChartTypeRegistry, ChartType } from 'chart.js';
 import * as XLSX from 'xlsx';
+import { ExcelData } from './excelData.service';
 
 @Component({
   selector: 'app-root',
@@ -8,6 +9,9 @@ import * as XLSX from 'xlsx';
   styleUrls: ['./app.component.css'],
 })
 export class AppComponent {
+
+  excelDataService : ExcelData = inject(ExcelData);
+
   title = 'data-visualization-demo';
   selectedOptionRow: string = '';
   selectedOptionColumn: string = '';
@@ -16,8 +20,9 @@ export class AppComponent {
   rowData: string[] = [];
   columnData: string[] = [];
   fieldNames: string[] = [];
-  data: Array<string[] | number[]> = [];
+  data: string[] = [];
   graph: boolean = false;
+  itemCount: number = 0;
 
   // Selected fields to display
   selectedFields: boolean[] = [];
@@ -43,66 +48,126 @@ export class AppComponent {
   lineChartLegend = true;
   lineChartType = 'line';
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  constructor(private cdr: ChangeDetectorRef) { }
 
-  showGraph() {
-    const indexRow: number = this.fieldNames.indexOf(this.selectedOptionRow);
-    const indexColumn: number = this.fieldNames.indexOf(this.selectedOptionColumn);
+  fetchValues(){
 
-    if (indexRow === -1 || indexColumn === -1) {
+    const rowIndex: number = this.fieldNames.indexOf(this.selectedOptionRow);
+    const columnIndex: number = this.fieldNames.indexOf(this.selectedOptionColumn);
+
+    if (rowIndex === -1 || columnIndex === -1 && this.selectedOptionRow.length != 0 && this.selectedOptionColumn.length != 0) {
       console.error('Invalid row or column selection');
       return;
     }
-
+     this.data = this.excelDataService.dataSet;
     // Prepare the data for the graph
-    this.columnData = this.data.map((d) => d[indexColumn] as string);
-    this.rowData = this.data.map((d) => d[indexRow] as string);
+    this.rowData = this.data.map((d, e) => {
+      if ((this.itemCount != 0 && this.itemCount > e) || this.itemCount == 0)
+        return d[rowIndex];
+      else
+        return null;
+    }).filter((e): e is string => e !== null);
 
+    this.columnData = this.data.map((d) => d[columnIndex] );
+    console.log(this.rowData);
+    console.log(this.columnData);
+    console.log("In the fetch Value");
+    
+    
+  }
+
+  showGraph() {
+    if (this.checkValidity() === false) {
+      alert("Invalid Field values");
+    }
+
+    if(this.itemCount != 0){
+      this.columnData.splice(this.itemCount);
+      this.rowData.splice(this.itemCount);
+    }
     this.lineChartData = [
       {
         data: this.columnData,
         label: this.selectedOptionColumn,
       },
+      
     ];
     this.lineChartLabels = this.rowData;
 
     this.graph = true;
+    console.log("HI " + this.itemCount);
 
     // Trigger Angular to update the view
     this.cdr.detectChanges();
   }
 
-  // Handle file change and parse the excel data
-  
-  // Update the displayed fields based on user selection
-  updateDisplayedFields(): void {
-    this.displayedFieldNames = this.fieldNames.filter((_, idx) => this.selectedFields[idx]);
+  checkValidity() {
+    console.log(this.columnData);
+    console.log(this.rowData);
+    
+    
+    if (isNaN(Number(this.columnData[0])) && isNaN(Number(this.rowData[0]))  ) {
+      console.log(Number(this.columnData[0]) + " " + Number(this.rowData[0]));
+      this.graph = false;
+      return false;
+    }
+    else
+      return true;
   }
 
-  // Sorting function to sort data based on selected column
-  sortData(index: number): void {
-    const key = this.fieldNames[index]; // Field name to sort by
-    const firstValue = this.data[0][index];
-    const isNumeric = typeof firstValue === 'number' || !isNaN(Number(firstValue));
+  ascendingSort() {
 
-    this.data.sort((a, b) => {
-      const aValue = a[index];
-      const bValue = b[index];
-  
-      if (isNumeric) {
-        // Numeric sorting
-        return Number(aValue) - Number(bValue);
-      } else {
-        // String sorting
-        return (aValue > bValue) ? 1 : (aValue < bValue) ? -1 : 0;
+    this.fetchValues();
+
+    if (!isNaN(Number(this.columnData[0]))) {
+      const pair : Map<string,number> = new Map();
+      for(let i = 0; i < this.rowData.length; i++){
+          pair.set(this.rowData[i], (pair.get(this.rowData[i]) ?? 0) + Number(this.columnData[i]));
       }
-    });
-    // this.columnData = this.data as string[];
+
+      let sortedArray = Array.from(pair.entries()).sort((a, b) => b[1] - a[1]);
+
+      let sortedPair : Map<string,number> = new Map(sortedArray);
+
+      this.columnData.splice(0,this.columnData.length);
+      this.rowData.splice(0,this.rowData.length);
+      let index : number = 0;
+      console.log(sortedArray);
+      
+      console.log(sortedPair);
+      
+      for(let key of sortedPair.keys()){
+        this.rowData.push(key);
+        this.columnData.push(sortedPair.get(key)?.toString() ?? '0');
+        index++;
+      }
+      this.cdr.detectChanges();
+      console.log("Ascending");
+      console.log(this.rowData);
+      console.log(this.columnData) ;
+      this.itemCount = this.columnData.length;
+    }
+    else{
+      alert("Invalid column value");
+    }
+    this.showGraph();
   }
+
+  limitDisplayItems() {
+    if (this.itemCount < 0)
+      alert("Invalid Item count");
+    else
+      this.showGraph();
+  }
+
+  // Update the displayed fields based on user selection
+  // updateDisplayedFields(): void {
+  //   this.displayedFieldNames = this.fieldNames.filter((_, idx) => this.selectedFields[idx]);
+  // }
 
   onFileChange(event: any): void {
-    const target: DataTransfer = <DataTransfer>event.target;
 
+    const target: DataTransfer = <DataTransfer>event.target;
     if (target.files.length !== 1) {
       console.error('Cannot use multiple files');
       return;
@@ -127,11 +192,11 @@ export class AppComponent {
         const header = jsonData[0] as string[];
         if (header && header.length > 0) {
           this.fieldNames = header;
-          this.data = jsonData.slice(1).map((row) => row as string[] | number[]);
+          this.data = jsonData.slice(1).map((row) => row as string);
 
           // Initialize selected fields (by default, all are selected)
           this.selectedFields = Array(this.fieldNames.length).fill(true);
-          this.updateDisplayedFields();
+          this.excelDataService.setData(this.fieldNames, this.data);
         } else {
           console.error('Invalid file format: No headers found.');
         }
@@ -139,8 +204,9 @@ export class AppComponent {
         console.error('Invalid file format: Empty sheet.');
       }
     };
-
-    reader.readAsBinaryString(file);
+     reader.readAsBinaryString(file);
+     
+     console.log(this.fieldNames, this.data +" IN the onFileChange");
   }
 
 }

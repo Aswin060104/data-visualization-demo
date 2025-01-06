@@ -5,6 +5,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { NgChartsModule } from 'ng2-charts';
 import { FormsModule } from '@angular/forms';
+import { ExcelData } from './excelData.service';
 @NgModule({
   declarations: [
     AppComponent,
@@ -15,7 +16,9 @@ import { FormsModule } from '@angular/forms';
     NgChartsModule,
     FormsModule
   ],
-  providers: [],
+  providers: [
+    ExcelData
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
