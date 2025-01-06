@@ -10,7 +10,7 @@ import { ExcelData } from './excelData.service';
 })
 export class AppComponent {
 
-  excelDataService : ExcelData = inject(ExcelData);
+  excelDataService: ExcelData = inject(ExcelData);
 
   title = 'data-visualization-demo';
   selectedOptionRow: string = '';
@@ -18,7 +18,7 @@ export class AppComponent {
   chartType: ChartType = 'line';
 
   rowData: string[] = [];
-  columnData: string[] = [];
+  columnData: number[] = [];
   fieldNames: string[] = [];
   data: string[] = [];
   graph: boolean = false;
@@ -50,7 +50,7 @@ export class AppComponent {
 
   constructor(private cdr: ChangeDetectorRef) { }
 
-  fetchValues(){
+  fetchValues() {
 
     const rowIndex: number = this.fieldNames.indexOf(this.selectedOptionRow);
     const columnIndex: number = this.fieldNames.indexOf(this.selectedOptionColumn);
@@ -59,54 +59,56 @@ export class AppComponent {
       console.error('Invalid row or column selection');
       return;
     }
-     this.data = this.excelDataService.dataSet;
+    this.data = this.excelDataService.dataSet;
     // Prepare the data for the graph
-    this.rowData = this.data.map((d, e) => {
-      if ((this.itemCount != 0 && this.itemCount > e) || this.itemCount == 0)
-        return d[rowIndex];
-      else
-        return null;
-    }).filter((e): e is string => e !== null);
+    this.rowData = this.data.map((d, e) => (d[rowIndex]));
+    this.columnData = this.data.map((d) => Number(d[columnIndex]));
 
-    this.columnData = this.data.map((d) => d[columnIndex] );
+    this.rowData = this.rowData.filter((element, index) => (this.rowData.indexOf(element) == index));
+    this.columnData = this.columnData.map((element, index) => {
+      if (this.rowData.indexOf(this.rowData[index]) === index)
+        return element;
+      else
+        return Number(this.columnData[this.columnData.indexOf(element)]) + Number(element);
+    });
     console.log(this.rowData);
     console.log(this.columnData);
     console.log("In the fetch Value");
-    
-    
   }
 
   showGraph() {
-    if (this.checkValidity() === false) {
-      alert("Invalid Field values");
+    if (this.checkValidity() !== false) {
+      if (this.itemCount != 0) {
+        this.columnData.splice(this.itemCount);
+        this.rowData.splice(this.itemCount);
+      }
+      this.lineChartData = [
+        {
+          data: this.columnData,
+          label: this.selectedOptionColumn,
+        },
+
+      ];
+      this.lineChartLabels = this.rowData;
+
+      this.graph = true;
+      console.log("HI " + this.itemCount);
+
+      // Trigger Angular to update the view
+      this.cdr.detectChanges();
     }
-
-    if(this.itemCount != 0){
-      this.columnData.splice(this.itemCount);
-      this.rowData.splice(this.itemCount);
-    }
-    this.lineChartData = [
-      {
-        data: this.columnData,
-        label: this.selectedOptionColumn,
-      },
-      
-    ];
-    this.lineChartLabels = this.rowData;
-
-    this.graph = true;
-    console.log("HI " + this.itemCount);
-
-    // Trigger Angular to update the view
-    this.cdr.detectChanges();
   }
 
   checkValidity() {
-    console.log(this.columnData);
-    console.log(this.rowData);
-    
-    
-    if (isNaN(Number(this.columnData[0])) && isNaN(Number(this.rowData[0]))  ) {
+
+    if (isNaN(Number(this.columnData[0]))) {
+      alert("Column field must be a Number");
+      console.log(this.columnData[0]);
+      this.graph = false;
+      return false;
+    }
+    else if (!isNaN(Number(this.rowData[0]))) {
+      alert("Row field must be a String");
       console.log(Number(this.columnData[0]) + " " + Number(this.rowData[0]));
       this.graph = false;
       return false;
@@ -117,40 +119,39 @@ export class AppComponent {
 
   ascendingSort() {
 
+    this.checkValidity();
     this.fetchValues();
-
-    if (!isNaN(Number(this.columnData[0]))) {
-      const pair : Map<string,number> = new Map();
-      for(let i = 0; i < this.rowData.length; i++){
-          pair.set(this.rowData[i], (pair.get(this.rowData[i]) ?? 0) + Number(this.columnData[i]));
-      }
-
-      let sortedArray = Array.from(pair.entries()).sort((a, b) => b[1] - a[1]);
-
-      let sortedPair : Map<string,number> = new Map(sortedArray);
-
-      this.columnData.splice(0,this.columnData.length);
-      this.rowData.splice(0,this.rowData.length);
-      let index : number = 0;
-      console.log(sortedArray);
-      
-      console.log(sortedPair);
-      
-      for(let key of sortedPair.keys()){
-        this.rowData.push(key);
-        this.columnData.push(sortedPair.get(key)?.toString() ?? '0');
-        index++;
-      }
-      this.cdr.detectChanges();
-      console.log("Ascending");
-      console.log(this.rowData);
-      console.log(this.columnData) ;
-      this.itemCount = this.columnData.length;
+    const pair: Map<string, number> = new Map();
+    for (let i = 0; i < this.rowData.length; i++) {
+      pair.set(this.rowData[i], (pair.get(this.rowData[i]) ?? 0) + Number(this.columnData[i]));
     }
-    else{
-      alert("Invalid column value");
+
+    let sortedArray = Array.from(pair.entries()).sort((a, b) => b[1] - a[1]);
+
+    let sortedPair: Map<string, number> = new Map(sortedArray);
+
+    this.columnData.splice(0, this.columnData.length);
+    this.rowData.splice(0, this.rowData.length);
+    let index: number = 0;
+    console.log(sortedArray);
+
+    console.log(sortedPair);
+
+    for (let key of sortedPair.keys()) {
+      this.rowData.push(key);
+      this.columnData.push((sortedPair.get(key) ?? 0));
+      index++;
     }
+
+    console.log("Ascending");
+    console.log(this.rowData);
+    console.log(this.columnData);
+    this.itemCount = sortedArray.length;
     this.showGraph();
+
+    // else{
+    //   alert("Invalid column value");
+    // }
   }
 
   limitDisplayItems() {
@@ -160,10 +161,20 @@ export class AppComponent {
       this.showGraph();
   }
 
-  // Update the displayed fields based on user selection
-  // updateDisplayedFields(): void {
-  //   this.displayedFieldNames = this.fieldNames.filter((_, idx) => this.selectedFields[idx]);
-  // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   onFileChange(event: any): void {
 
@@ -204,9 +215,9 @@ export class AppComponent {
         console.error('Invalid file format: Empty sheet.');
       }
     };
-     reader.readAsBinaryString(file);
-     
-     console.log(this.fieldNames, this.data +" IN the onFileChange");
+    reader.readAsBinaryString(file);
+
+    console.log(this.fieldNames, this.data + " IN the onFileChange");
   }
 
 }
