@@ -8,7 +8,7 @@
   Column
   <select name="fieldNames" id="fieldNames" [(ngModel)]="selectedOptionColumn" (change)="fetchValues()">
     <ng-container  *ngFor="let field of fieldNames">
-      <option [value]="field">{{field}}</option>
+      <option *ngIf="field != selectedOptionRow" [value]="field">{{field}}</option>
     </ng-container>
   </select>
   <select name="chartType" id="" [(ngModel)]="chartType">

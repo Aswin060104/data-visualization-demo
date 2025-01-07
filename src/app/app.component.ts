@@ -19,6 +19,7 @@ export class AppComponent {
 
   rowData: string[] = [];
   columnData: number[] = [];
+  modifiedColumns: number[] = [];
   fieldNames: string[] = [];
   data: string[] = [];
   graph: boolean = false;
@@ -60,20 +61,37 @@ export class AppComponent {
       return;
     }
     this.data = this.excelDataService.dataSet;
+    
     // Prepare the data for the graph
     this.rowData = this.data.map((d, e) => (d[rowIndex]));
     this.columnData = this.data.map((d) => Number(d[columnIndex]));
-
-    this.rowData = this.rowData.filter((element, index) => (this.rowData.indexOf(element) == index));
-    this.columnData = this.columnData.map((element, index) => {
-      if (this.rowData.indexOf(this.rowData[index]) === index)
-        return element;
-      else
-        return Number(this.columnData[this.columnData.indexOf(element)]) + Number(element);
+    console.log(this.columnData);
+    
+    let sum : number = 0;
+    this.columnData.forEach((e)=>{
+      sum += e;
     });
+    console.log(sum);
+    
+    this.columnData.forEach((element, index) => {
+      if (this.rowData.indexOf(this.rowData[index]) === index){
+        console.log("changing row data  "+this.rowData.indexOf(this.rowData[index]));
+        this.modifiedColumns[index] = element;
+      }
+      else{
+        this.modifiedColumns[this.rowData.indexOf(this.rowData[index])] = this.columnData[this.rowData.indexOf(this.rowData[index])] + element;
+      }
+    });
+    this.rowData = this.rowData.filter((element, index) => (this.rowData.indexOf(element) == index));
+
     console.log(this.rowData);
     console.log(this.columnData);
+    console.log(this.modifiedColumns);
+    
+    this.columnData.splice(this.rowData.length);
     console.log("In the fetch Value");
+
+    this.itemCount = this.columnData.length;
   }
 
   showGraph() {
