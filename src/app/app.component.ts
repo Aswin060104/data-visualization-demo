@@ -72,23 +72,25 @@ export class AppComponent {
       sum += e;
     });
     console.log(sum);
-    
+    let rowColumn : Map<string,number> =new Map();
     this.columnData.forEach((element, index) => {
-      if (this.rowData.indexOf(this.rowData[index]) === index){
-        console.log("changing row data  "+this.rowData.indexOf(this.rowData[index]));
-        this.modifiedColumns[index] = element;
+      if(this.rowData.indexOf(this.rowData[index]) === index){
+        rowColumn.set(this.rowData[index],element);
       }
       else{
-        this.modifiedColumns[this.rowData.indexOf(this.rowData[index])] = this.columnData[this.rowData.indexOf(this.rowData[index])] + element;
+        rowColumn.set(this.rowData[this.rowData.indexOf(this.rowData[index])],(rowColumn.get(this.rowData[index]) ?? 0) + element);
       }
     });
-    this.rowData = this.rowData.filter((element, index) => (this.rowData.indexOf(element) == index));
 
-    console.log(this.rowData);
-    console.log(this.columnData);
+    this.rowData = this.rowData.filter((element, index) => (this.rowData.indexOf(element) == index));
     console.log(this.modifiedColumns);
+
+    this.columnData.splice(0,this.columnData.length);
+  for(let k  of rowColumn.keys()){
+    this.columnData.push((rowColumn.get(k)??0));
+  }
+    console.log(rowColumn);
     
-    this.columnData.splice(this.rowData.length);
     console.log("In the fetch Value");
 
     this.itemCount = this.columnData.length;
